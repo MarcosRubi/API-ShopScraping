@@ -19,6 +19,8 @@ app.use(cors())
 app.get('/', (req, res) => res.status(200).send('Hello'))
 app.get('/best-buy/:product', Vendor.getBestBuy)
 app.get('/amazon/:product', Vendor.getAmazon)
+app.get('/gearbest/:product', Vendor.getGearbest)
+app.get('/aliexpress/:product', Vendor.getAliexpress)
 
 // Iniciando el servidor
 app.listen(app.get('port'), () => {

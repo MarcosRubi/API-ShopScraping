@@ -58,16 +58,7 @@ const Vendor = {
           results.push({ name, model, price, url })
         })
 
-        res.setHeader('Access-Control-Allow-Credentials', true)
-        res.setHeader('Access-Control-Allow-Origin', '*')
-        res.setHeader(
-          'Access-Control-Allow-Methods',
-          'GET,OPTIONS,PATCH,DELETE,POST,PUT'
-        )
-        res.setHeader(
-          'Access-Control-Allow-Headers',
-          'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-        )
+        getHeaders(res)
         res.status(200).json(results)
 
         // Cerramos el puppeteer
@@ -126,16 +117,129 @@ const Vendor = {
           results.push({ name, model, price, url })
         })
 
-        res.setHeader('Access-Control-Allow-Credentials', true)
-        res.setHeader('Access-Control-Allow-Origin', '*')
-        res.setHeader(
-          'Access-Control-Allow-Methods',
-          'GET,OPTIONS,PATCH,DELETE,POST,PUT'
+        getHeaders(res)
+        res.status(200).json(results)
+
+        // Cerramos el puppeteer
+        await page.close()
+        await browser.close()
+      } catch (error) {
+        console.error(error)
+      }
+    })()
+  },
+
+  getGearbest: (req, res) => {
+    (async () => {
+      let options = { headless: false }
+      if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
+        options = {
+          args: [...chrome.args, '--hide-scrollbars', '--disable-web-security'],
+          defaultViewport: chrome.defaultViewport,
+          executablePath: await chrome.executablePath,
+          headless: true,
+          ignoreHTTPSErrors: true
+        }
+      }
+      try {
+        // Abrimos una instancia del puppeteer y accedemos a la url
+        // const browser = await puppeteer.launch({ headless: false })
+        const browser = await puppeteer.launch(options)
+        const page = await browser.newPage()
+        const response = await page.goto(
+          `https://www.gearbest.com/search/?Keyword=${req.params.product}`
         )
-        res.setHeader(
-          'Access-Control-Allow-Headers',
-          'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+        const body = await response.text()
+
+        // Creamos una instancia del resultado devuelto por puppeter para parsearlo con jsdom
+        const {
+          window: { document }
+        } = new jsdom.JSDOM(body)
+
+        // Validamos si encontro resultados
+        const products = document.querySelectorAll('.list_products_box .list_products_item')
+        if (products.length === 0) {
+          res.status(200).json({ gearbest: 'null' })
+          return
+        }
+
+        const results = []
+
+        products.forEach((product, index) => {
+          const name = product.querySelector('a').title
+          const model = ''
+          const price = product.querySelector('.a-offscreen')?.textContent
+          const url = `https://www.gearbest.com${product.querySelector('a')?.href}`
+
+          results.push({ name, model, price, url })
+        })
+
+        getHeaders(res)
+        res.status(200).json(results)
+
+        // Cerramos el puppeteer
+        await page.close()
+        await browser.close()
+      } catch (error) {
+        console.error(error)
+      }
+    })()
+  },
+
+  getAliexpress: (req, res) => {
+    (async () => {
+      let options = { headless: false }
+      if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
+        options = {
+          args: [...chrome.args, '--hide-scrollbars', '--disable-web-security'],
+          defaultViewport: chrome.defaultViewport,
+          executablePath: await chrome.executablePath,
+          headless: true,
+          ignoreHTTPSErrors: true
+        }
+      }
+      try {
+        // Abrimos una instancia del puppeteer y accedemos a la url
+        // const browser = await puppeteer.launch({ headless: false })
+        const browser = await puppeteer.launch(options)
+        const page = await browser.newPage()
+        const response = await page.goto(
+          `https://www.aliexpress.com/af/${req.params.product.split(' ').join('-')}.html`
         )
+        const body = await response.text()
+
+        // Creamos una instancia del resultado devuelto por puppeter para parsearlo con jsdom
+        const {
+          window: { document }
+        } = new jsdom.JSDOM(body)
+
+        // Validamos si encontro resultados
+        const products = document.querySelectorAll('.list--gallery--34TropR > a')
+        if (products.length === 0) {
+          res.status(200).json({ aliexpress: 'null' })
+          return
+        }
+
+        const results = []
+
+        products.forEach((product, index) => {
+          const CONVERTTOUSD = 0.114286
+          const name = product.querySelector('h1.manhattan--titleText--WccSjUS').textContent
+          const model = ''
+          const priceArr = product.querySelectorAll('.manhattan--price-sale--1CCSZfK span')
+          let price = ''
+          priceArr.forEach((item, index) => {
+            if (index !== 0) {
+              price += item.textContent
+            }
+          })
+          price = `$${(parseFloat(price) * CONVERTTOUSD).toFixed(2)}`
+          const url = `https:${product.href}`
+
+          results.push({ name, model, price, url })
+        })
+
+        getHeaders(res)
         res.status(200).json(results)
 
         // Cerramos el puppeteer
@@ -146,6 +250,20 @@ const Vendor = {
       }
     })()
   }
+
+}
+
+const getHeaders = (res) => {
+  res.setHeader('Access-Control-Allow-Credentials', true)
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET,OPTIONS,PATCH,DELETE,POST,PUT'
+  )
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  )
 }
 
 module.exports = Vendor
