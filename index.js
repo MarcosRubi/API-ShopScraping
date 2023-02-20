@@ -22,6 +22,10 @@ app.get('/amazon/:product', Vendor.getAmazon)
 app.get('/gearbest/:product', Vendor.getGearbest)
 app.get('/aliexpress/:product', Vendor.getAliexpress)
 
+app.get('/zona-digital/:product', Vendor.getZonaDigital)
+app.get('/electronica-japonesa/:product', Vendor.getElectronicaJaponesa)
+app.get('/office-depto/:product', Vendor.getOfficeDepot)
+
 // Iniciando el servidor
 app.listen(app.get('port'), () => {
   console.log(`Server listening on port ${app.get('port')}`)

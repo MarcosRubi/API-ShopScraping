@@ -21,7 +21,6 @@ const Vendor = {
       }
       try {
         // Abrimos una instancia del puppeteer y accedemos a la url
-        // const browser = await puppeteer.launch({ headless: false })
         const browser = await puppeteer.launch(options)
         const page = await browser.newPage()
         const response = await page.goto(
@@ -84,7 +83,6 @@ const Vendor = {
       }
       try {
         // Abrimos una instancia del puppeteer y accedemos a la url
-        // const browser = await puppeteer.launch({ headless: false })
         const browser = await puppeteer.launch(options)
         const page = await browser.newPage()
         const response = await page.goto(
@@ -143,7 +141,6 @@ const Vendor = {
       }
       try {
         // Abrimos una instancia del puppeteer y accedemos a la url
-        // const browser = await puppeteer.launch({ headless: false })
         const browser = await puppeteer.launch(options)
         const page = await browser.newPage()
         const response = await page.goto(
@@ -200,7 +197,6 @@ const Vendor = {
       }
       try {
         // Abrimos una instancia del puppeteer y accedemos a la url
-        // const browser = await puppeteer.launch({ headless: false })
         const browser = await puppeteer.launch(options)
         const page = await browser.newPage()
         const response = await page.goto(
@@ -235,6 +231,174 @@ const Vendor = {
           })
           price = `$${(parseFloat(price) * CONVERTTOUSD).toFixed(2)}`
           const url = `https:${product.href}`
+
+          results.push({ name, model, price, url })
+        })
+
+        getHeaders(res)
+        res.status(200).json(results)
+
+        // Cerramos el puppeteer
+        await page.close()
+        await browser.close()
+      } catch (error) {
+        console.error(error)
+      }
+    })()
+  },
+
+  getZonaDigital: (req, res) => {
+    (async () => {
+      let options = { headless: false }
+      if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
+        options = {
+          args: [...chrome.args, '--hide-scrollbars', '--disable-web-security'],
+          defaultViewport: chrome.defaultViewport,
+          executablePath: await chrome.executablePath,
+          headless: true,
+          ignoreHTTPSErrors: true
+        }
+      }
+      try {
+        // Abrimos una instancia del puppeteer y accedemos a la url
+        const browser = await puppeteer.launch(options)
+        const page = await browser.newPage()
+        const response = await page.goto(
+          `https://www.zonadigitalsv.com/search?term=${req.params.product.split(' ').join('+')}&cat=all`
+        )
+        const body = await response.text()
+
+        // Creamos una instancia del resultado devuelto por puppeter para parsearlo con jsdom
+        const {
+          window: { document }
+        } = new jsdom.JSDOM(body)
+
+        // Validamos si encontro resultados
+        const products = document.querySelectorAll('#product-list .product-card')
+        if (products.length === 0) {
+          res.status(200).json({ zonaDigital: 'null' })
+          return
+        }
+
+        const results = []
+
+        products.forEach((product, index) => {
+          const name = product.querySelector('h3 a').textContent
+          const model = ''
+          const price = product.querySelector('span.text-primary').textContent
+          const url = `${product.querySelector('h3 a').href}`
+
+          results.push({ name, model, price, url })
+        })
+
+        getHeaders(res)
+        res.status(200).json(results)
+
+        // Cerramos el puppeteer
+        await page.close()
+        await browser.close()
+      } catch (error) {
+        console.error(error)
+      }
+    })()
+  },
+
+  getElectronicaJaponesa: (req, res) => {
+    (async () => {
+      let options = { headless: false }
+      if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
+        options = {
+          args: [...chrome.args, '--hide-scrollbars', '--disable-web-security'],
+          defaultViewport: chrome.defaultViewport,
+          executablePath: await chrome.executablePath,
+          headless: true,
+          ignoreHTTPSErrors: true
+        }
+      }
+      try {
+        // Abrimos una instancia del puppeteer y accedemos a la url
+        const browser = await puppeteer.launch(options)
+        const page = await browser.newPage()
+        const response = await page.goto(
+          `https://www.electronicajaponesa.com/?s=${req.params.product.split(' ').join('+')}&product_cat=0&post_type=product`
+        )
+        const body = await response.text()
+
+        // Creamos una instancia del resultado devuelto por puppeter para parsearlo con jsdom
+        const {
+          window: { document }
+        } = new jsdom.JSDOM(body)
+
+        // Validamos si encontro resultados
+        const products = document.querySelectorAll('ul.products li')
+        if (products.length === 0) {
+          res.status(200).json({ electronicaJaponesa: 'null' })
+          return
+        }
+
+        const results = []
+
+        products.forEach((product, index) => {
+          const name = product.querySelector('h2.woocommerce-loop-product__title').textContent
+          const model = ''
+          const price = product.querySelector('span.woocommerce-Price-amount').textContent
+          const url = product.querySelector('a.woocommerce-LoopProduct-link.woocommerce-loop-product__link').href
+
+          results.push({ name, model, price, url })
+        })
+
+        getHeaders(res)
+        res.status(200).json(results)
+
+        // Cerramos el puppeteer
+        await page.close()
+        await browser.close()
+      } catch (error) {
+        console.error(error)
+      }
+    })()
+  },
+
+  getOfficeDepot: (req, res) => {
+    (async () => {
+      let options = { headless: false }
+      if (process.env.AWS_LAMBDA_FUNCTION_VERSION) {
+        options = {
+          args: [...chrome.args, '--hide-scrollbars', '--disable-web-security'],
+          defaultViewport: chrome.defaultViewport,
+          executablePath: await chrome.executablePath,
+          headless: true,
+          ignoreHTTPSErrors: true
+        }
+      }
+      try {
+        // Abrimos una instancia del puppeteer y accedemos a la url
+        const browser = await puppeteer.launch(options)
+        const page = await browser.newPage()
+        const response = await page.goto(
+          `https://www.officedepot.com.sv/officedepotSV/en/search/?text=${req.params.product.split(' ').join('+')}`
+        )
+        const body = await response.text()
+
+        // Creamos una instancia del resultado devuelto por puppeter para parsearlo con jsdom
+        const {
+          window: { document }
+        } = new jsdom.JSDOM(body)
+
+        // Validamos si encontro resultados
+        const products = document.querySelectorAll('.product__switch_view.product__listing .product-item')
+        if (products.length === 0) {
+          res.status(200).json({ officeDepto: 'null' })
+          return
+        }
+
+        const results = []
+
+        products.forEach((product, index) => {
+          const name = product.querySelector('.name h2').textContent.trim()
+          const model = ''
+          const price = product.querySelector('.prices-container').textContent.trim()
+          const url = `https://www.officedepot.com.sv${product.querySelector('a.product-description').href}`
 
           results.push({ name, model, price, url })
         })
